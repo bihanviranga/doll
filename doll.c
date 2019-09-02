@@ -20,9 +20,13 @@ ASCII has 7 bits.
 
 /*** data ***/
 
-struct termios orig_termios;
-// Store the original terminal settings so we can
-// restore them on exit.
+struct editorConfig {
+    struct termios orig_termios;
+    // Store the original terminal settings so we can
+    // restore them on exit.
+};
+
+struct editorConfig E;
 
 /*** terminal ***/
 
@@ -35,18 +39,18 @@ void die(const char *s) {
 }
 
 void disableRawMode() {
-    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios) == -1) die("tcsetattr");
+    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &E.orig_termios) == -1) die("tcsetattr");
 }
 
 void enableRawMode() {
-    if (tcgetattr(STDIN_FILENO, &orig_termios) == -1) die("tcgetattr");
+    if (tcgetattr(STDIN_FILENO, &E.orig_termios) == -1) die("tcgetattr");
     // retrieve the current terminal settings
 
     atexit(disableRawMode);
     // Register disableRawMode to be called when exit() is called
     // or when program returns from main().
 
-    struct termios raw = orig_termios;
+    struct termios raw = E.orig_termios;
     raw.c_iflag &= ~(IXON | ICRNL | INPCK | ISTRIP | BRKINT);
     // This disables ctrl-s and ctrl-q
     // which are used to stop and continue data from
