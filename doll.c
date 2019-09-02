@@ -85,6 +85,13 @@ char editorReadKey() {
 
 /*** output ***/
 
+void editorDrawRows() {
+    int y;
+    for (y = 0; y < 24; y++) {
+        write(STDOUT_FILENO, "~\r\n", 3);
+    }
+}
+
 void editorRefreshScreen() {
     write(STDOUT_FILENO, "\x1b[2J", 4);
     // Clears the screen
@@ -94,6 +101,10 @@ void editorRefreshScreen() {
     // These are an escape sequences.
     // \x1b is 27 which is the escape character.
     // See the README section on Escape Sequences for further reading.
+
+    editorDrawRows();
+
+    write(STDOUT_FILENO, "\x1b[H", 3);
 }
 
 /*** input ***/
