@@ -1,3 +1,5 @@
+/*** includes ***/
+
 #include <unistd.h>
 #include <termios.h>
 #include <stdlib.h>
@@ -5,9 +7,13 @@
 #include <stdio.h>
 #include <errno.h>
 
+/*** data ***/
+
 struct termios orig_termios;
 // Store the original terminal settings so we can
 // restore them on exit.
+
+/*** terminal ***/
 
 void die(const char *s) {
     perror(s);
@@ -53,6 +59,8 @@ void enableRawMode() {
     // Set the new attributes
     // TCSAFLUSH and stuff are in the manpage for termios
 }
+
+/*** init ***/
 
 int main() {
     enableRawMode();
