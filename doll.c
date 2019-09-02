@@ -7,6 +7,17 @@
 #include <stdio.h>
 #include <errno.h>
 
+/*** defines ***/
+
+#define CTRL_KEY(k) ((k) & 0x1f)
+/* 
+Set the upper 3 bits to 0 through bitwise 'and'.
+It is similar to what the Ctrl key does in the terminal:
+Take whatever key you press and strip the bits 5 and 6
+(which are the highest 2 bits).
+ASCII has 7 bits.    
+*/
+
 /*** data ***/
 
 struct termios orig_termios;
@@ -60,21 +71,35 @@ void enableRawMode() {
     // TCSAFLUSH and stuff are in the manpage for termios
 }
 
+char editorReadKey() {
+    int nread;
+    char c;
+    while ((nread = read(STDIN_FILENO, &c, 1)) != 1) {
+        if (nread == -1 && errno != EAGAIN) die("read");
+    }
+    return c;
+}
+
+/*** input ***/
+
+void editorProcessKeypress() {
+    char c = editorReadKey();
+
+    switch (c) {
+        case CTRL_KEY('q'):
+            exit(0);
+            break;
+    }
+}
+
 /*** init ***/
 
 int main() {
     enableRawMode();
 
     while (1) {
-        char c = '\0';
-        if (read(STDIN_FILENO, &c, 1) == -1 && errno != EAGAIN) die ("read");
-        if (iscntrl(c)) {
-            printf("%d\r\n", c);
-        }
-        else {
-            printf("%d ('%c')\r\n", c, c);
-        }
-        if(c == 'q') break;
+        editorProcessKeypress();
     }
+    
     return 0;
 }
