@@ -11,6 +11,8 @@
 
 /*** defines ***/
 
+#define DOLL_VERSION "0.0.1"
+
 #define CTRL_KEY(k) ((k) & 0x1f)
 /* 
 Set the upper 3 bits to 0 through bitwise 'and'.
@@ -159,7 +161,25 @@ void abFree(struct abuf *ab) {
 void editorDrawRows(struct abuf *ab) {
     int y;
     for (y = 0; y < E.screenrows; y++) {
-        abAppend(ab, "~", 1);
+        if (y == E.screenrows / 3) {
+            char welcome[80];
+            int welcomelen = snprintf(welcome, sizeof(welcome),
+                "Doll Editor -- version %s", DOLL_VERSION);
+            if (welcomelen > E.screencols) welcomelen = E.screencols;
+            int padding = (E.screencols - welcomelen) / 2;
+            if (padding) {
+                abAppend(ab, "~", 1);
+                padding--;
+            }
+            while (padding--) abAppend(ab, " ", 1);
+            abAppend(ab, welcome, welcomelen);
+        }
+        else {
+            abAppend(ab, "~", 1);
+        }
+
+        abAppend(ab, "\x1b[K", 3);
+        // Clears the rest of the line
 
         // There was a \r\n after the last tilde,
         // which caused the screen to scroll,
@@ -174,8 +194,8 @@ void editorDrawRows(struct abuf *ab) {
 void editorRefreshScreen() {
     struct abuf ab = ABUF_INIT;
 
-    abAppend(&ab, "\x1b[2J", 4);
-    // Clears the screen
+    abAppend(&ab, "\x1b[?25l", 6);
+    // Hides the cursor
     abAppend(&ab, "\x1b[H", 3);
     // Moves the cursor to top-left
     
@@ -186,6 +206,8 @@ void editorRefreshScreen() {
     editorDrawRows(&ab);
 
     abAppend(&ab, "\x1b[H", 3);
+    abAppend(&ab, "\x1b[?25h", 6);
+    // Shows the cursor again.
 
     write(STDOUT_FILENO, ab.b, ab.len);
     abFree(&ab);
