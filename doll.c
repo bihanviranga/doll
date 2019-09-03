@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <sys/ioctl.h>
+#include <string.h>
 
 /*** defines ***/
 
@@ -18,6 +19,9 @@ Take whatever key you press and strip the bits 5 and 6
 (which are the highest 2 bits).
 ASCII has 7 bits.    
 */
+
+#define ABUF_INIT {NULL, 0}
+// This acts as a constructor to abuf type
 
 /*** data ***/
 
@@ -126,36 +130,65 @@ int getWindowSize(int *rows, int *cols) {
     // The TIOCGWINSZ request to ioctl gives the size of window.
 }
 
+/*** append buffer ***/
+
+/* 
+Instead of making several calls to write() everytime we
+want to refresh, we are using a buffer now.
+*/
+struct abuf {
+    char *b;
+    int len;
+};
+
+void abAppend(struct abuf *ab, const char *s, int len) {
+    char *new = realloc(ab->b, ab->len + len);
+
+    if(new == NULL) return;
+    memcpy(&new[ab->len], s, len);
+    ab->b = new;
+    ab->len += len;
+}
+
+void abFree(struct abuf *ab) {
+    free(ab->b);
+}
+
 /*** output ***/
 
-void editorDrawRows() {
+void editorDrawRows(struct abuf *ab) {
     int y;
     for (y = 0; y < E.screenrows; y++) {
-        write(STDOUT_FILENO, "~", 3);
+        abAppend(ab, "~", 1);
 
         // There was a \r\n after the last tilde,
         // which caused the screen to scroll,
         // revealing a new line without a tilde.
         // This condition check avoids that.
         if (y < E.screenrows - 1) {
-            write(STDOUT_FILENO, "\r\n", 2);
+            abAppend(ab, "\r\n", 2);
         }
     }
 }
 
 void editorRefreshScreen() {
-    write(STDOUT_FILENO, "\x1b[2J", 4);
+    struct abuf ab = ABUF_INIT;
+
+    abAppend(&ab, "\x1b[2J", 4);
     // Clears the screen
-    write(STDOUT_FILENO, "\x1b[H", 3);
+    abAppend(&ab, "\x1b[H", 3);
     // Moves the cursor to top-left
     
     // These are an escape sequences.
     // \x1b is 27 which is the escape character.
     // See the README section on Escape Sequences for further reading.
 
-    editorDrawRows();
+    editorDrawRows(&ab);
 
-    write(STDOUT_FILENO, "\x1b[H", 3);
+    abAppend(&ab, "\x1b[H", 3);
+
+    write(STDOUT_FILENO, ab.b, ab.len);
+    abFree(&ab);
 }
 
 /*** input ***/
