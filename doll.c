@@ -1,5 +1,9 @@
 /*** includes ***/
 
+#define _DEFAULT_SOURCE
+#define _BSD_SOURCE
+#define _GNU_SOURCE
+
 #include <unistd.h>
 #include <termios.h>
 #include <stdlib.h>
@@ -202,15 +206,26 @@ int getWindowSize(int *rows, int *cols) {
 
 /*** file i/o ***/
 
-void editorOpen() {
-    char *line = "Hello, world!";
-    ssize_t linelen = 13;
-
-    E.row.size = linelen;
-    E.row.chars = malloc(linelen + 1);
-    memcpy(E.row.chars, line, linelen);
-    E.row.chars[linelen] = '\0';
-    E.numrows = 1;
+void editorOpen(char *filename) {
+    FILE *fp = fopen(filename, "r");
+    if (!fp) die("fopen");
+    
+    char *line = NULL;
+    size_t linecap = 0;
+    ssize_t linelen;
+    linelen = getline(&line, &linecap, fp);
+    // now linelen is set to number of bytes read.
+    if (linelen != -1) {
+        while (linelen > 0 && (line[linelen - 1] == '\n' || line[linelen - 1] == '\r')) linelen--;
+        // This while loop seems to remove trailing \r and/or \n
+        E.row.size = linelen;
+        E.row.chars = malloc(linelen + 1);
+        memcpy(E.row.chars, line, linelen);
+        E.row.chars[linelen] = '\0';
+        E.numrows = 1;
+    }
+    free(line);
+    fclose(fp);
 }
 
 /*** append buffer ***/
@@ -378,10 +393,12 @@ void initEditor() {
     if (getWindowSize(&E.screenrows, &E.screencols) == -1) die ("getWindowSize");
 }
 
-int main() {
+int main(int argc, char *argv[]) {
     enableRawMode();
     initEditor();
-    editorOpen();
+    if (argc >= 2) {
+        editorOpen(argv[1]);
+    }
 
     while (1) {
         editorRefreshScreen();
