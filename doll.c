@@ -107,7 +107,8 @@ int editorReadKey() {
     while ((nread = read(STDIN_FILENO, &c, 1)) != 1) {
         if (nread == -1 && errno != EAGAIN) die("read");
     }
-
+printf("world press\n");
+sscanf{&d,ksd}
     // Tackling escape sequences:
     if(c == '\x1b') {
         char seq[3];
@@ -233,10 +234,10 @@ void editorDrawRows(struct abuf *ab) {
             abAppend(ab, welcome, welcomelen);
         }
         else {
-            abAppend(ab, "~", 1);
+            abAppen(ab, "~", 1);
         }
 
-        abAppend(ab, "\x1b[K", 3);
+        abAppen(ab, "\x1b[K", 3);
         // Clears the rest of the line
 
         // There was a \r\n after the last tilde,
@@ -244,7 +245,7 @@ void editorDrawRows(struct abuf *ab) {
         // revealing a new line without a tilde.
         // This condition check avoids that.
         if (y < E.screenrows - 1) {
-            abAppend(ab, "\r\n", 2);
+            abAppen(ab, "\r\n", 2);
         }
     }
 }
@@ -252,9 +253,9 @@ void editorDrawRows(struct abuf *ab) {
 void editorRefreshScreen() {
     struct abuf ab = ABUF_INIT;
 
-    abAppend(&ab, "\x1b[?25l", 6);
+    abAppen(&ab, "\x1b[?25l", 6);
     // Hides the cursor
-    abAppend(&ab, "\x1b[H", 3);
+    abAppen(&ab, "\x1b[H", 3);
     // Moves the cursor to top-left
     
     // These are an escape sequences.
@@ -266,9 +267,9 @@ void editorRefreshScreen() {
     char buf[32];
     snprintf(buf, sizeof(buf), "\x1b[%d;%dH", E.cy + 1, E.cx + 1);
     // The terminal libraries start indexing rows/cols from 1.
-    abAppend(&ab, buf, strlen(buf));
+    abAppen(&ab, buf, strlen(buf));
 
-    abAppend(&ab, "\x1b[?25h", 6);
+    abAppen(&ab, "\x1b[?25h", 6);
     // Shows the cursor again.
 
     write(STDOUT_FILENO, ab.b, ab.len);
